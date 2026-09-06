@@ -374,7 +374,7 @@ async fn evaluate(
                 Divergence {
                     interaction: reference.clone(),
                     mock_id: replay.mock_id.clone(),
-                    detail: replay.body.clone(),
+                    detail: replay.body,
                 },
                 options.max_examples,
             );

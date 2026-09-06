@@ -435,7 +435,7 @@ fn detect_from_patterns(
         if let Some(confidence) = (checker.checker_fn)(&strings, features, ctx)
             && confidence >= checker.threshold
         {
-            potential_types.push((checker.field_type.clone(), confidence));
+            potential_types.push((checker.field_type, confidence));
         }
     }
 

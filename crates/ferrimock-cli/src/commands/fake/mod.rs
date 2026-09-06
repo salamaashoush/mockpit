@@ -209,7 +209,7 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             if let Some(category) = list {
                 ops::list_category(category.as_deref(), &format)
             } else {
-                ops::data(ops::Data {
+                ops::data(&ops::Data {
                     generator,
                     count,
                     min,
@@ -242,7 +242,7 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             open,
         } => {
             let (width, height) = size.map_or((width, height), |s| (s, s));
-            ops::image(ops::Image {
+            ops::image(&ops::Image {
                 image_type,
                 width,
                 height,
@@ -269,7 +269,7 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             base64,
             data_uri,
             open,
-        } => ops::pdf(ops::Pdf {
+        } => ops::pdf(&ops::Pdf {
             pages,
             text,
             output,
@@ -282,7 +282,7 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             search,
             verbose,
             format,
-        } => ops::list(ops::ListGenerators {
+        } => ops::list(&ops::ListGenerators {
             category,
             search,
             verbose,

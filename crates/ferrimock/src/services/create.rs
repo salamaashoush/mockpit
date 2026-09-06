@@ -240,17 +240,26 @@ mod template_body_tests {
             ("POST", "/api/users"),
             ("DELETE", "/api/users/:id"),
         ];
+        let mut failures = Vec::new();
         for (method, url) in cases {
             let body = generate_template_body(method, url);
-            let rendered = render_template(&body, &RequestContext::default())
-                .unwrap_or_else(|e| panic!("{method} {url} template does not render: {e}"));
-            let json: serde_json::Value = serde_json::from_str(&rendered).unwrap_or_else(|e| {
-                panic!("{method} {url} rendered to invalid JSON: {e}\n{rendered}")
-            });
-            assert!(
-                json.get("id").is_some() || json.get("data").is_some(),
-                "{method} {url}: {json}"
-            );
+            let rendered = match render_template(&body, &RequestContext::default()) {
+                Ok(rendered) => rendered,
+                Err(e) => {
+                    failures.push(format!("{method} {url} does not render: {e}"));
+                    continue;
+                }
+            };
+            match serde_json::from_str::<serde_json::Value>(&rendered) {
+                Ok(json) if json.get("id").is_some() || json.get("data").is_some() => {}
+                Ok(json) => {
+                    failures.push(format!("{method} {url} has neither id nor data: {json}"));
+                }
+                Err(e) => {
+                    failures.push(format!("{method} {url} is not JSON: {e}\n{rendered}"));
+                }
+            }
         }
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
     }
 }

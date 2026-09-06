@@ -889,7 +889,7 @@ impl MockValidator {
                         .or_else(|| Self::find_line_number(file_content, "rewrite_path"))
                         .or_else(|| Self::find_line_number(file_content, "[request"));
                     errors.push(ValidationError {
-              mock_id: mock_id.clone(),
+              mock_id,
               error_type: ErrorType::ConflictingModes,
               message: "Cannot combine request transforms with full mock response (response.body/response.json)".to_string(),
               snippet: None,

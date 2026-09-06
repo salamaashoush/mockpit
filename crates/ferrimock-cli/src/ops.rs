@@ -132,7 +132,7 @@ pub mod fake {
     }
 
     /// Print `count` values of `generator` in `format`.
-    pub fn data(opts: Data) -> anyhow::Result<()> {
+    pub fn data(opts: &Data) -> anyhow::Result<()> {
         data::generate_fake_data(
             &opts.generator,
             opts.count,
@@ -163,7 +163,7 @@ pub mod fake {
     }
 
     /// Print the generators, filtered by `opts`.
-    pub fn list(opts: ListGenerators) -> anyhow::Result<()> {
+    pub fn list(opts: &ListGenerators) -> anyhow::Result<()> {
         let format = if opts.format.is_empty() {
             "text"
         } else {
@@ -234,7 +234,7 @@ pub mod fake {
     }
 
     /// Write, print, or open the image `opts` describes.
-    pub fn image(opts: Image) -> anyhow::Result<()> {
+    pub fn image(opts: &Image) -> anyhow::Result<()> {
         image::generate_fake_image(
             &opts.image_type,
             opts.width,
@@ -281,7 +281,7 @@ pub mod fake {
     }
 
     /// Write, print, or open the PDF `opts` describes.
-    pub fn pdf(opts: Pdf) -> anyhow::Result<()> {
+    pub fn pdf(opts: &Pdf) -> anyhow::Result<()> {
         pdf::generate_fake_pdf(
             opts.pages,
             opts.text.as_deref(),
@@ -359,6 +359,8 @@ pub mod fake {
 }
 
 #[cfg(test)]
+// A test that cannot set up is a failed test; expect is the shortest way to say so.
+#[allow(clippy::expect_used)]
 mod tests {
     use super::{CreateMock, create_mock};
 

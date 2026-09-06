@@ -498,7 +498,7 @@ fn apply_foreign_keys(
                 .is_some_and(|relation| relation.target == target && !relation.is_carried())
         }) {
             if let Some(relation) = existing.value.relation_mut() {
-                relation.carrier = Carrier::ForeignKey(name.clone());
+                relation.carrier = Carrier::ForeignKey(name);
             }
             continue;
         }
@@ -752,7 +752,7 @@ fn apply_spec_links(
                         format!("{} → {}", operation.path, link.name),
                     ),
                 )
-                .abstract_target(target.members.clone()),
+                .abstract_target(target.members),
             ));
         }
     }

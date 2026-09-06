@@ -866,7 +866,7 @@ fn read_paths(
             if !seen.insert((method.clone(), id.clone())) {
                 defects.push(SpecDefect {
                     location: LeanString::from(location.as_str()),
-                    kind: DefectKind::DuplicateOperation(id.clone()),
+                    kind: DefectKind::DuplicateOperation(id),
                 });
                 continue;
             }
