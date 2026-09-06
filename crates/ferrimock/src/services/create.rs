@@ -195,7 +195,7 @@ pub fn generate_template_body(method: &str, url: &str) -> String {
       "id": "{{ fake_uuid() }}",
       "name": "{{ fake_name() }}",
       "email": "{{ fake_email() }}",
-      "createdAt": "{{ fake_iso_datetime() }}"
+      "createdAt": "{{ fake_timestamp() }}"
     }{% if not loop.last %},{% endif %}
     {% endfor %}
   ],
@@ -216,8 +216,41 @@ pub fn generate_template_body(method: &str, url: &str) -> String {
   "id": "{{ fake_uuid() }}",
   "name": "{{ fake_name() }}",
   "email": "{{ fake_email() }}",
-  "createdAt": "{{ fake_iso_datetime() }}"
+  "createdAt": "{{ fake_timestamp() }}"
 }"#
         .into()
+    }
+}
+
+#[cfg(test)]
+mod template_body_tests {
+    use super::generate_template_body;
+    use crate::template::render_template;
+    use crate::types::RequestContext;
+
+    /// Every body `--template` writes has to render, or the mock it was
+    /// written into fails to load. A function name that is not registered
+    /// (`fake_iso_datetime` once was) shows up here, not at the user's shell.
+    #[test]
+    fn every_generated_template_renders_to_json() {
+        let cases = [
+            ("GET", "/api/users"),
+            ("GET", "/api/users/:id"),
+            ("GET", "/api/search"),
+            ("POST", "/api/users"),
+            ("DELETE", "/api/users/:id"),
+        ];
+        for (method, url) in cases {
+            let body = generate_template_body(method, url);
+            let rendered = render_template(&body, &RequestContext::default())
+                .unwrap_or_else(|e| panic!("{method} {url} template does not render: {e}"));
+            let json: serde_json::Value = serde_json::from_str(&rendered).unwrap_or_else(|e| {
+                panic!("{method} {url} rendered to invalid JSON: {e}\n{rendered}")
+            });
+            assert!(
+                json.get("id").is_some() || json.get("data").is_some(),
+                "{method} {url}: {json}"
+            );
+        }
     }
 }
