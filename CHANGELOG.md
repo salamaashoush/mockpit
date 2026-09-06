@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-09-06
+
+### Bug Fixes
+
+- *(create)* --template wrote a function that does not exist ([2971852](https://github.com/salamaashoush/ferrimock/commit/2971852fd194134682d10347e75b0d5db901df8f))
+
+### Features
+
+- *(cli)* Expose the mock and fake operations without clap ([9801a01](https://github.com/salamaashoush/ferrimock/commit/9801a01c66cfe5b52a64339795d0d117970acd55))
+
 ## [0.4.0] - 2026-08-25
 
 Six breaking changes, all in the state machines and the world doctor added

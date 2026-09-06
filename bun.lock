@@ -10,22 +10,22 @@
     },
     "crates/ferrimock-napi": {
       "name": "@ferrimock/node",
-      "version": "0.3.0",
+      "version": "0.4.1",
       "devDependencies": {
         "@napi-rs/cli": "~3.6.1",
       },
       "optionalDependencies": {
-        "@ferrimock/node-darwin-arm64": "0.3.0",
-        "@ferrimock/node-darwin-x64": "0.3.0",
-        "@ferrimock/node-linux-arm64-gnu": "0.3.0",
-        "@ferrimock/node-linux-x64-gnu": "0.3.0",
-        "@ferrimock/node-win32-arm64-msvc": "0.3.0",
-        "@ferrimock/node-win32-x64-msvc": "0.3.0",
+        "@ferrimock/node-darwin-arm64": "0.4.1",
+        "@ferrimock/node-darwin-x64": "0.4.1",
+        "@ferrimock/node-linux-arm64-gnu": "0.4.1",
+        "@ferrimock/node-linux-x64-gnu": "0.4.1",
+        "@ferrimock/node-win32-arm64-msvc": "0.4.1",
+        "@ferrimock/node-win32-x64-msvc": "0.4.1",
       },
     },
     "packages/core": {
       "name": "ferrimock",
-      "version": "0.3.0",
+      "version": "0.4.1",
       "dependencies": {
         "@ferrimock/node": "0.3.0",
         "@mswjs/interceptors": "^0.41.9",
@@ -38,7 +38,7 @@
     },
     "packages/playwright": {
       "name": "@ferrimock/playwright",
-      "version": "0.3.0",
+      "version": "0.4.1",
       "peerDependencies": {
         "@playwright/test": ">=1.40.0",
         "ferrimock": "0.3.0",

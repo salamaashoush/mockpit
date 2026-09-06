@@ -1,6 +1,6 @@
 {
   "name": "@ferrimock/playwright",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Playwright adapter for ferrimock -- fixtures that wire the mock engine into page.route()",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -22,7 +22,7 @@
     "build": "tsdown"
   },
   "peerDependencies": {
-    "ferrimock": "0.4.0",
+    "ferrimock": "0.4.1",
     "@playwright/test": ">=1.40.0"
   },
   "peerDependenciesMeta": {

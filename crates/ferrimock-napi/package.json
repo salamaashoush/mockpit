@@ -1,6 +1,6 @@
 {
   "name": "@ferrimock/node",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "High-performance HTTP mocking engine with MSW-style handler API for Node.js",
   "main": "index.js",
   "module": "index.mjs",
@@ -53,12 +53,12 @@
     "@napi-rs/cli": "~3.6.1"
   },
   "optionalDependencies": {
-    "@ferrimock/node-linux-x64-gnu": "0.4.0",
-    "@ferrimock/node-linux-arm64-gnu": "0.4.0",
-    "@ferrimock/node-darwin-arm64": "0.4.0",
-    "@ferrimock/node-darwin-x64": "0.4.0",
-    "@ferrimock/node-win32-x64-msvc": "0.4.0",
-    "@ferrimock/node-win32-arm64-msvc": "0.4.0"
+    "@ferrimock/node-linux-x64-gnu": "0.4.1",
+    "@ferrimock/node-linux-arm64-gnu": "0.4.1",
+    "@ferrimock/node-darwin-arm64": "0.4.1",
+    "@ferrimock/node-darwin-x64": "0.4.1",
+    "@ferrimock/node-win32-x64-msvc": "0.4.1",
+    "@ferrimock/node-win32-arm64-msvc": "0.4.1"
   },
   "repository": {
     "type": "git",
