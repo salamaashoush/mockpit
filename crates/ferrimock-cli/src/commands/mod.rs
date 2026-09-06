@@ -1,22 +1,22 @@
 //! Ferrimock CLI commands: mock management and fake data generation.
 
-mod consolidate;
-mod convert;
-mod create;
+pub(crate) mod consolidate;
+pub(crate) mod convert;
+pub(crate) mod create;
 mod dispatch;
-mod export;
+pub(crate) mod export;
 pub mod fake;
-mod format;
-mod list;
+pub(crate) mod format;
+pub(crate) mod list;
 pub mod proxy;
-mod recordings;
-mod reload;
-mod serve;
-mod show;
-mod test;
+pub(crate) mod recordings;
+pub(crate) mod reload;
+pub(crate) mod serve;
+pub(crate) mod show;
+pub(crate) mod test;
 pub mod ui;
-mod validate;
-mod wizard;
+pub(crate) mod validate;
+pub(crate) mod wizard;
 pub mod world;
 
 // Re-export the mock command entry point
@@ -39,26 +39,19 @@ pub struct MockCommand {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum MockAction {
-    /// Create a new mock definition
+    /// Write a new mock file, from flags or through a wizard
     ///
-    /// Create mocks with either quick flags or an interactive wizard.
+    /// With a URL, the flags describe the mock and the file is written
+    /// straight away. Without one, or with --interactive, a wizard asks for
+    /// the URL pattern (Express, regex, or glob, detected from what you
+    /// type), the methods, any header, query, or body matchers, and the
+    /// response, and shows the result before saving it.
     ///
-    /// Quick mode (with flags):
+    /// Examples:
     ///   mock create "/api/users/:id" -m GET -s 200 --template
-    ///
-    /// Interactive wizard mode:
-    ///   mock create --interactive
-    ///   mock create -I
-    ///   mock create              # (no URL triggers interactive mode)
-    ///
-    /// The interactive wizard provides step-by-step guidance for:
-    ///   - URL pattern with auto-detection (Express/:id, regex, glob)
-    ///   - HTTP method selection (single or multiple)
-    ///   - Header/query/body matchers
-    ///   - Smart template selection based on endpoint patterns
-    ///   - Response configuration (status, content-type, delay)
-    ///   - Preview and confirmation before saving
-    #[command(visible_alias = "new")]
+    ///   mock create "/api/orders" -m POST -s 201 -b @order.json
+    ///   mock create
+    #[command(visible_alias = "new", verbatim_doc_comment)]
     Create {
         /// URL pattern to match (omit to start interactive wizard)
         #[arg(value_name = "URL")]
@@ -80,7 +73,7 @@ pub enum MockAction {
         #[arg(short = 'b', long, value_name = "BODY")]
         body: Option<String>,
 
-        /// Use template with fake data
+        /// Generate a body template with fake data instead of a fixed body
         #[arg(short = 't', long)]
         template: bool,
 
@@ -105,7 +98,7 @@ pub enum MockAction {
         interactive: bool,
     },
 
-    /// List all loaded mock definitions
+    /// List the mocks in the collections directory
     #[command(visible_alias = "ls")]
     List {
         /// Filter by collection name
@@ -117,7 +110,7 @@ pub enum MockAction {
         verbose: bool,
     },
 
-    /// Show details of a specific mock
+    /// Print one mock's definition
     #[command(visible_alias = "s")]
     Show {
         /// Mock ID
@@ -125,30 +118,18 @@ pub enum MockAction {
         mock_id: String,
     },
 
-    /// Test if a request matches any mocks
+    /// Show which mock a request would hit, and why the others would not
     ///
-    /// Test mock matching with full request simulation including headers, body,
-    /// and optionally render the response with fake data.
+    /// Builds the request from the path, method, headers, and body you give
+    /// and runs it through the matcher without a server. --render also
+    /// shows the response the mock would send, with its template filled
+    /// in; --debug lists every mock with the criterion it failed on.
     ///
     /// Examples:
-    ///   # Basic matching test
-    ///   mock test -m GET /api/users/123
-    ///
-    ///   # With rendered response preview
     ///   mock test -m GET /api/users/123 --render
-    ///
-    ///   # With headers
-    ///   mock test -m POST /api/users -H "Content-Type: application/json" -H "Authorization: Bearer token"
-    ///
-    ///   # With request body
-    ///   mock test -m POST /api/users --body '{"name": "John"}'
-    ///
-    ///   # Debug mode showing why mocks matched/didn't match
+    ///   mock test -m POST /api/users -H "Content-Type: application/json" --body '{"name": "Ann"}'
     ///   mock test -m GET /api/users/123 --debug
-    ///
-    ///   # JSON output for programmatic use
-    ///   mock test -m GET /api/users/123 --render --json
-    #[command(visible_alias = "t")]
+    #[command(visible_alias = "t", verbatim_doc_comment)]
     Test {
         /// HTTP method
         #[arg(short = 'm', long, value_name = "METHOD", default_value = "GET")]
@@ -187,7 +168,7 @@ pub enum MockAction {
         json: bool,
     },
 
-    /// Reload mock collections from disk
+    /// Load the collections directory and report how many mocks it holds
     #[command(visible_alias = "r")]
     Reload {
         /// Mock collections directory
@@ -195,7 +176,7 @@ pub enum MockAction {
         dir: Option<String>,
     },
 
-    /// List recordings
+    /// List the recorded sessions in the recordings directory
     #[command(visible_alias = "rec")]
     Recordings {
         /// Recordings directory
@@ -203,7 +184,7 @@ pub enum MockAction {
         dir: Option<String>,
     },
 
-    /// Validate mock configuration files
+    /// Check that mock files parse, load, and reference only things that exist
     #[command(visible_alias = "v")]
     Validate {
         /// Mock collections directory or specific file path (defaults to mocks/collections)
@@ -223,17 +204,18 @@ pub enum MockAction {
         file_format: Option<String>,
     },
 
-    /// Format mock configuration files
+    /// Rewrite mock files in the canonical layout
     ///
-    /// Normalize mock files with consistent formatting: sorted keys, aligned values,
-    /// and standard field ordering (id, priority, enabled, scope, match, response, request).
+    /// Fields come out in a fixed order (id, priority, enabled, scope, match,
+    /// response, request) with sorted keys, so two people editing the same
+    /// file produce the same diff. --check reports instead of writing and
+    /// exits 1 when a file would change.
     ///
     /// Examples:
     ///   mock format mocks/collections/
-    ///   mock format mocks/api.yaml
-    ///   mock format --check mocks/    # Check without modifying (exit 1 if unformatted)
+    ///   mock format --check mocks/
     ///   cat mock.yaml | mock format --stdin --file-format yaml
-    #[command(visible_alias = "fmt")]
+    #[command(visible_alias = "fmt", verbatim_doc_comment)]
     Format {
         /// Mock collections directory or specific file path (defaults to mocks/collections)
         #[arg(value_name = "PATH")]
@@ -252,11 +234,12 @@ pub enum MockAction {
         file_format: Option<String>,
     },
 
-    /// Convert HAR file to mock collection
+    /// Turn a HAR file into a mock collection
     ///
-    /// By default, produces clean replay-ready mocks: normalizes absolute URLs
-    /// to relative paths, filters domains and static assets, strips
-    /// sensitive/infrastructure headers, and removes access_token from query strings.
+    /// The result replays cleanly by default: absolute URLs become relative
+    /// paths, static assets and other domains are left out, sensitive and
+    /// infrastructure headers are stripped, and access_token query
+    /// parameters are removed. Each flag below keeps one of those.
     #[command(visible_alias = "conv")]
     Convert {
         /// Input HAR file
@@ -272,8 +255,9 @@ pub enum MockAction {
         #[arg(short = 'f', long, value_name = "FORMAT", value_parser = ["json", "yaml"])]
         format: Option<String>,
 
-        /// Matching: exact (preserve URLs), pattern (detect IDs/UUIDs)
-        #[arg(short = 'm', long, value_name = "STRATEGY", value_parser = ["exact", "pattern"], default_value = "pattern")]
+        // Accepted so existing scripts keep working; conversion has always
+        // matched recorded URLs exactly and never read this.
+        #[arg(short = 'm', long, value_name = "STRATEGY", value_parser = ["exact", "pattern"], default_value = "pattern", hide = true)]
         matching: String,
 
         /// Interactive pattern editing
@@ -336,7 +320,7 @@ pub enum MockAction {
         no_delays: bool,
     },
 
-    /// Export mock collection to HAR format
+    /// Write a mock collection out as a HAR file
     #[command(visible_alias = "exp")]
     Export {
         /// Mock collections directory
@@ -352,26 +336,19 @@ pub enum MockAction {
         collection: Option<String>,
     },
 
-    /// Consolidate and optimize recorded mocks to reduce file size
+    /// Merge a recording's repeated requests into patterns
     ///
-    /// Smart consolidation engine that dramatically reduces file size while maintaining
-    /// 100% behavioral accuracy. Uses intelligent pattern detection to group similar requests.
-    ///
-    /// Features (all automatic):
-    /// - Pagination pattern detection (page=1,2,3... -> single prefix pattern)
-    /// - ID-based path consolidation (/users/123,456... -> regex pattern)
-    /// - Smart templates with dynamic fake data generators
+    /// Requests that differ only in an id, a page number, or a value the
+    /// type detector can place become one mock with a path pattern and a
+    /// template, so a large recording shrinks to a small collection that
+    /// still answers every request it recorded. --verify replays the
+    /// recording through the result and reports what changed.
     ///
     /// Examples:
-    ///   # Consolidate with all optimizations
-    ///   mock consolidate recordings/session-123.json optimized.json
-    ///
-    ///   # Use templates with fake data for maximum size reduction
-    ///   mock consolidate recordings/large.json tiny.json
-    ///
-    ///   # Disable template generation
-    ///   mock consolidate input.json output.json --no-templates
-    #[command(visible_alias = "opt")]
+    ///   mock consolidate recordings/session.json mocks/api.yaml
+    ///   mock consolidate recordings/session.json mocks/api.yaml --verify
+    ///   mock consolidate recordings/session.json mocks/api.yaml --no-templates
+    #[command(visible_alias = "opt", verbatim_doc_comment)]
     Consolidate {
         /// Input mock collection
         #[arg(value_name = "INPUT")]
@@ -421,37 +398,19 @@ pub enum MockAction {
         verbose: bool,
     },
 
-    /// Start a standalone mock server
+    /// Serve the mocks over HTTP, with nothing upstream
     ///
-    /// Spin up a lightweight HTTP server that serves mock responses.
-    /// Perfect for frontend development without running the full proxy.
-    ///
-    /// Features:
-    /// - Lightweight - no proxy overhead, just mock matching
-    /// - Hot reload - watches mock files and reloads on change
-    /// - Request logging - shows matched/unmatched requests
-    /// - CORS support - for frontend development
-    /// - Fake data endpoint - render templates via HTTP
+    /// A request that matches a mock gets its response; one that matches
+    /// none gets a 404 whose body names the closest mock and the criterion
+    /// it failed on. --watch reloads the files when they change, --cors
+    /// lets a page on another origin call it, and --log-matches prints
+    /// which mock answered each request.
     ///
     /// Examples:
-    ///   # Start mock server on default port
-    ///   mock serve
-    ///
-    ///   # With custom port and hot reload
     ///   mock serve --port 3006 --watch
-    ///
-    ///   # With CORS for frontend development
-    ///   mock serve --cors --verbose
-    ///
-    ///   # From specific mock directory
-    ///   mock serve --mocks ./mocks/api/
-    ///
-    ///   # Load a specific mock file
+    ///   mock serve --mocks ./mocks/api/ --cors --log-matches
     ///   mock serve -f mocks/api-users.yaml
-    ///
-    ///   # Log which mock matched each request
-    ///   mock serve --mocks ./mocks/ --log-matches
-    #[command(visible_alias = "sv")]
+    #[command(visible_alias = "sv", verbatim_doc_comment)]
     Serve {
         /// Mock collections directory (same as --mocks)
         #[arg(value_name = "DIR")]

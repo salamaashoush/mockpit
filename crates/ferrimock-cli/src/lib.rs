@@ -7,6 +7,7 @@
 
 pub mod commands;
 pub mod config;
+pub mod ops;
 
 // Re-export the command entry points and types for convenience
 pub use commands::fake;

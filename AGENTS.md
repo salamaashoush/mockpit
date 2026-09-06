@@ -92,7 +92,16 @@ Monorepo with Cargo workspace (3 Rust crates) + bun workspaces (3 JS packages).
   an Arc). The addon enables the `spec` feature; without it the loader would
   ignore every `.graphql` and the world would always be empty under Node.
 
-**ferrimock-cli** (binary) -- CLI for mock management and fake data generation.
+**ferrimock-cli** (binary and library) -- CLI for mock management and fake data
+generation. `ferrimock_cli::ops` is the embedding surface: every `mock` and
+`fake` operation as a function over a plain option struct (`CreateMock`,
+`TestMockParams`, `ops::fake::Image`, and so on), with no clap in sight. A
+host that ships these commands under its own name defines its own clap types,
+flags, and help, and converts into those structs; the clap types in `commands`
+are ferrimock's own binary and one caller among others.
+Changing a flag there does not reach embedders; changing a field in `ops` does,
+so a field added to an `ops` struct is a minor-version change and a removed one
+is major.
 
 ### JavaScript Packages
 

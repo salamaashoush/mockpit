@@ -2,8 +2,8 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 //! The generated JSON Schema is a shipped artifact, so something has to look at it.
 //!
-//! box-dev-gate generates `mock.schema.json` from `MockCollectionConfig` straight
-//! into a VS Code extension, and a type annotated `schemars(with = "Value")`
+//! An editor extension generates `mock.schema.json` from `MockCollectionConfig`
+//! for completion, and a type annotated `schemars(with = "Value")`
 //! describes nothing — no completion, no check that a field exists, a typo caught
 //! only when the world is built. `machines:` shipped that way for exactly one
 //! commit because the annotation was copied from a neighbour without asking

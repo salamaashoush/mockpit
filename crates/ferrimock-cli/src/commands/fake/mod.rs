@@ -1,18 +1,15 @@
 //! Fake data CLI commands: generation, images, PDFs, templates, and HTTP server.
 
-mod data;
+pub(crate) mod data;
 mod generators;
-mod image;
-mod pdf;
-mod preview;
-mod server;
+pub(crate) mod image;
+pub(crate) mod pdf;
+pub(crate) mod preview;
+pub(crate) mod server;
 
 use clap::{Args, Subcommand};
 
-/// Generate fake data, images, PDFs, and more
-///
-/// Access 100+ fake data generators directly from the CLI. Generate test data,
-/// placeholder images, PDF documents, and preview templates with fake data.
+/// Generate fake data, images, and PDFs, and preview templates
 #[derive(Args, Debug, Clone)]
 pub struct FakeCommand {
     #[command(subcommand)]
@@ -21,7 +18,7 @@ pub struct FakeCommand {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum FakeAction {
-    /// Generate fake data values (names, emails, UUIDs, etc.)
+    /// Print fake values of one type: names, emails, UUIDs, and a hundred more
     #[command(visible_alias = "d")]
     Data {
         /// Type of fake data to generate
@@ -54,7 +51,7 @@ pub enum FakeAction {
         list: Option<Option<String>>,
     },
 
-    /// Generate fake images (PNG, JPEG, avatars, placeholders)
+    /// Write a placeholder, avatar, gradient, or noise image
     #[command(visible_alias = "img")]
     Image {
         /// Type of image: placeholder, avatar, gradient, checkerboard, noise, stripes
@@ -113,7 +110,7 @@ pub enum FakeAction {
         open: bool,
     },
 
-    /// Generate fake PDF documents
+    /// Write a PDF with generated text
     #[command(visible_alias = "doc")]
     Pdf {
         /// Number of pages
@@ -136,7 +133,7 @@ pub enum FakeAction {
         open: bool,
     },
 
-    /// List all available fake data generators
+    /// List the generators, by category
     #[command(visible_alias = "ls")]
     List {
         /// Filter by category
@@ -153,7 +150,7 @@ pub enum FakeAction {
         format: String,
     },
 
-    /// Preview template rendering with fake data
+    /// Render a template the way a mock response would
     #[command(visible_alias = "tpl")]
     Preview {
         /// Template string to render
@@ -173,7 +170,7 @@ pub enum FakeAction {
         format: String,
     },
 
-    /// Start a fake data HTTP server
+    /// Serve the generators and template rendering over HTTP
     #[command(visible_alias = "s")]
     Serve {
         /// Port to listen on
@@ -196,6 +193,7 @@ pub enum FakeAction {
 
 /// Execute fake command
 pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
+    use crate::ops::fake as ops;
     match cmd.action {
         FakeAction::Data {
             generator,
@@ -209,9 +207,18 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             list,
         } => {
             if let Some(category) = list {
-                data::list_generators_for_category(category.as_deref(), &format)
+                ops::list_category(category.as_deref(), &format)
             } else {
-                data::generate_fake_data(&generator, count, min, max, words, length, &format, copy)
+                ops::data(ops::Data {
+                    generator,
+                    count,
+                    min,
+                    max,
+                    words,
+                    length,
+                    format,
+                    copy,
+                })
             }
         }
         FakeAction::Image {
@@ -234,30 +241,26 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             colored,
             open,
         } => {
-            let (w, h) = if let Some(s) = size {
-                (s, s)
-            } else {
-                (width, height)
-            };
-            image::generate_fake_image(
-                &image_type,
-                w,
-                h,
-                bg_color.as_deref(),
-                text_color.as_deref(),
-                text.as_deref(),
-                initials.as_deref(),
-                start.as_deref(),
-                end.as_deref(),
-                &direction,
-                &image_format,
+            let (width, height) = size.map_or((width, height), |s| (s, s));
+            ops::image(ops::Image {
+                image_type,
+                width,
+                height,
+                bg_color,
+                text_color,
+                text,
+                initials,
+                start,
+                end,
+                direction,
+                format: image_format,
                 quality,
-                output.as_deref(),
+                output,
                 base64,
                 data_uri,
                 colored,
                 open,
-            )
+            })
         }
         FakeAction::Pdf {
             pages,
@@ -266,20 +269,25 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             base64,
             data_uri,
             open,
-        } => pdf::generate_fake_pdf(
+        } => ops::pdf(ops::Pdf {
             pages,
-            text.as_deref(),
-            output.as_deref(),
+            text,
+            output,
             base64,
             data_uri,
             open,
-        ),
+        }),
         FakeAction::List {
             category,
             search,
             verbose,
             format,
-        } => data::list_generators(category.as_deref(), search.as_deref(), verbose, &format),
+        } => ops::list(ops::ListGenerators {
+            category,
+            search,
+            verbose,
+            format,
+        }),
         FakeAction::Preview {
             template,
             file,
@@ -287,13 +295,13 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             count,
             format,
         } => {
-            preview::preview_template(
-                template.as_deref(),
-                file.as_deref(),
-                context.as_deref(),
+            ops::preview(ops::Preview {
+                template,
+                file,
+                context,
                 count,
-                &format,
-            )
+                format,
+            })
             .await
         }
         FakeAction::Serve {
@@ -302,6 +310,15 @@ pub async fn execute(cmd: FakeCommand) -> anyhow::Result<()> {
             cors,
             open,
             verbose,
-        } => server::serve_fake_data(port, &host, cors, open, verbose).await,
+        } => {
+            ops::serve(ops::Server {
+                port,
+                host,
+                cors,
+                open,
+                verbose,
+            })
+            .await
+        }
     }
 }

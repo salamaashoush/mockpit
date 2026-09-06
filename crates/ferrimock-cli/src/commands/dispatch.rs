@@ -3,10 +3,7 @@
 //! Create, list, test, serve, and manage HTTP mock definitions.
 
 use super::{MockAction, MockCommand};
-use super::{
-    consolidate, convert, create, export, format, list, recordings, reload, serve, show, test,
-    validate, wizard,
-};
+use crate::ops;
 
 /// Execute mock command
 #[allow(clippy::large_futures)]
@@ -24,33 +21,24 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             collection,
             kind,
             interactive,
-        } => {
-            match (interactive, url) {
-                // Launch interactive wizard if --interactive flag is set or no URL provided
-                (true, url) | (false, url @ None) => wizard::run_wizard(
-                    url, output, &method, status, body, template, id, priority, collection, &kind,
-                ),
-                // Quick mode with flags when URL is provided
-                (false, Some(url)) => create::create_mock(
-                    output,
-                    &method,
-                    &url,
-                    status,
-                    body,
-                    template,
-                    id,
-                    priority,
-                    collection.as_deref(),
-                    &kind,
-                    false,
-                ),
-            }
-        }
+        } => ops::create_mock(ops::CreateMock {
+            url,
+            output,
+            method,
+            status,
+            body,
+            template,
+            id,
+            priority,
+            collection,
+            kind,
+            interactive,
+        }),
         MockAction::List {
             collection,
             verbose,
-        } => list::list_mocks(collection, verbose).await,
-        MockAction::Show { mock_id } => show::show_mock(&mock_id).await,
+        } => ops::list_mocks(collection, verbose).await,
+        MockAction::Show { mock_id } => ops::show_mock(&mock_id).await,
         MockAction::Test {
             method,
             path,
@@ -62,7 +50,7 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             mock_file,
             json,
         } => {
-            test::test_mock_match(test::TestMockParams {
+            ops::test_mock_match(ops::TestMockParams {
                 method_str: method,
                 path,
                 query,
@@ -75,20 +63,20 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             })
             .await
         }
-        MockAction::Reload { dir } => reload::reload_mocks(dir).await,
-        MockAction::Recordings { dir } => recordings::list_recordings(dir),
+        MockAction::Reload { dir } => ops::reload_mocks(dir).await,
+        MockAction::Recordings { dir } => ops::list_recordings(dir),
         MockAction::Validate {
             path,
             format,
             stdin,
             file_format,
-        } => validate::validate_mocks(path, &format, stdin, file_format).await,
+        } => ops::validate_mocks(path, &format, stdin, file_format).await,
         MockAction::Format {
             path,
             check,
             stdin,
             file_format,
-        } => format::format_mocks(path, check, stdin, file_format.as_deref()),
+        } => ops::format_mocks(path, check, stdin, file_format.as_deref()),
         MockAction::Convert {
             input,
             output,
@@ -111,8 +99,8 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             // An explicit `--format` wins; otherwise the extension the caller
             // typed is what they meant, and writing YAML into a file called
             // `.json` produces something nothing downstream will read back.
-            let format = format.unwrap_or_else(|| convert::format_for(&output));
-            convert::convert_har(convert::ConvertHarOptions {
+            let format = format.unwrap_or_else(|| ops::format_for(&output));
+            ops::convert_har(ops::ConvertHarOptions {
                 input,
                 output,
                 format,
@@ -136,7 +124,7 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             dir,
             output,
             collection,
-        } => export::export_to_har(dir, output, collection).await,
+        } => ops::export_to_har(dir, output, collection).await,
         MockAction::Consolidate {
             input,
             output,
@@ -148,7 +136,7 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             fail_under,
             verbose,
         } => {
-            consolidate::consolidate_mocks(consolidate::ConsolidateArgs {
+            ops::consolidate_mocks(ops::ConsolidateArgs {
                 input,
                 output,
                 format,
@@ -175,7 +163,7 @@ pub async fn execute(cmd: MockCommand) -> anyhow::Result<()> {
             open,
             no_explain,
         } => {
-            serve::serve_mock_server(serve::MockServerConfig {
+            ops::serve_mock_server(ops::MockServerConfig {
                 port,
                 host,
                 mocks_dir: dir.or(mocks),
